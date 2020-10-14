@@ -21,9 +21,12 @@ class Program
 
     static async Task InternalMainAsync(string[] args)
     {
-        if (!CommandLine.Parser.TryParse(args, out s_cmdLine) &&
-            s_cmdLine != null &&
-            !IsDataValid(s_cmdLine))
+        if (!CommandLine.Parser.TryParse(args, out s_cmdLine))
+        {
+            return;
+        }
+
+        if (s_cmdLine == null || !IsDataValid(s_cmdLine))
         {
             return;
         }
