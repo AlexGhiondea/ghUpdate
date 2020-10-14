@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "addLabel": {
+      "commandName": "Project",
+      "commandLineArgs": "--help"
+    }
+  }
+}
