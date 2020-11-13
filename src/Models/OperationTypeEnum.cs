@@ -1,5 +1,6 @@
 ﻿public enum OperationTypeEnum
 {
     add,
-    remove
+    remove,
+    set
 }

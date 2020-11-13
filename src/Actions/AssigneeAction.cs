@@ -1,16 +1,11 @@
 ﻿using Octokit;
+using System;
 
-public class AssigneeAction : IssueAction
+public class AssigneeAction : IssueAction, IIssueAttributeAction
 {
-    public string Assignee
-    {
-        get
-        {
-            return AdditionalData[0];
-        }
-    }
+    public string Assignee => AdditionalData[0];
 
-    public override void ApplyTo(IssueUpdate issue)
+    public void ApplyTo(IssueUpdate issue)
     {
         switch (Operation)
         {
@@ -21,7 +16,7 @@ public class AssigneeAction : IssueAction
                 issue.RemoveAssignee(Assignee);
                 break;
             default:
-                break;
+                throw new NotSupportedException($"{nameof(AssigneeAction)} does not support operation {Operation}");
         }
     }
 }

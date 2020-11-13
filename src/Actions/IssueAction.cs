@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public abstract class IssueAction : IAction
+public abstract class IssueAction
 {
     public OperationTypeEnum Operation { get; set; }
     public AttributeTypeEnum Attribute { get; set; }
@@ -12,7 +12,7 @@ public abstract class IssueAction : IAction
 
     public override string ToString()
     {
-        return $"{Operation} {Attribute} ({string.Join(',', AdditionalData)})";
+        return $"{Operation} {Attribute} ({string.Join(',', AdditionalData).Trim()})";
     }
 
     public static IssueAction Parse(string configLine)
@@ -43,10 +43,26 @@ public abstract class IssueAction : IAction
                         AdditionalData = additionalData
                     };
                 }
+            case AttributeTypeEnum.state:
+                {
+                    return new IssueStateAction()
+                    {
+                        Operation = operation,
+                        Attribute = attribute,
+                        AdditionalData = additionalData
+                    };
+                }
+            case AttributeTypeEnum.comment:
+                {
+                    return new CommentAction()
+                    {
+                        Operation = operation,
+                        Attribute = attribute,
+                        AdditionalData = additionalData
+                    };
+                }
         }
 
         throw new InvalidOperationException("Cannot parse configuration line");
     }
-
-    public abstract void ApplyTo(IssueUpdate issue);
 }

@@ -1,5 +1,7 @@
 ﻿public enum AttributeTypeEnum
 {
     label,
-    assignee
+    assignee,
+    state,
+    comment
 }

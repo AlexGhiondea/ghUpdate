@@ -3,6 +3,7 @@ using OutputColorizer;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -33,7 +34,7 @@ class Program
 
         s_gitHub = GetGitHubClientWithToken(s_cmdLine.Token);
 
-        string dataFileToUse = s_cmdLine.DataFile;
+        string dataFileToUse = s_cmdLine.IssuesFile;
         // Does it have a 'progress.dat' file?
 
         if (File.Exists("progress.dat"))
@@ -49,6 +50,10 @@ class Program
         Colorizer.WriteLine("Reading actions to take on issues from [Yellow!{0}]", s_cmdLine.ActionsFile);
         List<IssueAction> actionsToTake = FileParserHelpers.ParseContent(s_cmdLine.ActionsFile, IssueAction.Parse);
         Colorizer.WriteLine("Found [Yellow!{0}] actions to take.", actionsToTake.Count);
+        foreach (var action in actionsToTake)
+        {
+            Colorizer.WriteLine(" > " + action.ToString());
+        }
 
         Colorizer.WriteLine("Reading data from [Yellow!{0}]", dataFileToUse);
         List<ParsedIssue> issues = FileParserHelpers.ParseContent(dataFileToUse, ParsedIssue.Parse);
@@ -75,13 +80,22 @@ class Program
 
                 IssueUpdate updatedIssue = ghIssue.ToUpdate();
 
-                // apply the modifications to the issue.
-                foreach (IAction action in actionsToTake)
+                // apply the modifications to the issue
+                // this will filter to just the issues that change the attributes of an issue
+                foreach (IIssueAttributeAction action in actionsToTake.OfType<IIssueAttributeAction>())
                 {
                     action.ApplyTo(updatedIssue);
                 }
 
                 await s_gitHub.Issue.Update(issue.Org, issue.Repo, ghIssue.Number, updatedIssue);
+                await Task.Delay(1000);
+
+                // apply comments to the issue
+                foreach (ICommentAction action in actionsToTake.OfType<ICommentAction>())
+                {
+                    await s_gitHub.Issue.Comment.Create(issue.Org, issue.Repo, int.Parse(issue.Id), action.GetComment());
+                    await Task.Delay(1000);
+                }
 
                 Colorizer.WriteLine("[Green!done].");
             }
@@ -122,7 +136,7 @@ class Program
             return false;
         }
 
-        if (!File.Exists(s_cmdLine.DataFile))
+        if (!File.Exists(s_cmdLine.IssuesFile))
         {
             Colorizer.WriteLine("[Red!Error] Please specify an existing data file!");
             return false;
