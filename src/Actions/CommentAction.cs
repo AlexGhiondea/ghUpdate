@@ -2,9 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Text;
-using System.Text.Encodings.Web;
-using System.Threading;
 
 public class CommentAction : IssueAction, ICommentAction
 {

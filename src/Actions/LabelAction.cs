@@ -1,6 +1,5 @@
 ﻿using Octokit;
 using System;
-using System.Threading;
 
 public class LabelAction : IssueAction, IIssueAttributeAction
 {
