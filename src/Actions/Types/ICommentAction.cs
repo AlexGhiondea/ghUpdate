@@ -2,5 +2,5 @@
 
 public interface ICommentAction
 {
-    string GetComment();
+    string GetComment(Issue issue);
 }

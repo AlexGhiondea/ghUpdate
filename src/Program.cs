@@ -16,22 +16,31 @@ class Program
         using (ColorizerFileLog s_writer = new ColorizerFileLog("fileLog.txt"))
         {
             Colorizer.SetupWriter(s_writer);
+
+            if (!CommandLine.Parser.TryParse(args, out s_cmdLine))
+            {
+                Colorizer.WriteLine("When using the Comment action, the following text replacements are available");
+
+                // also print the encoders that are supported by the Comment.
+                foreach (var item in CommentAction.s_tokenMap.Keys)
+                {
+                    Colorizer.WriteLine(" > " + item);
+                }
+
+                return;
+            }
+
+            if (s_cmdLine == null || !IsDataValid(s_cmdLine))
+            {
+                return;
+            }
+
             InternalMainAsync(args).GetAwaiter().GetResult();
         }
     }
 
     static async Task InternalMainAsync(string[] args)
     {
-        if (!CommandLine.Parser.TryParse(args, out s_cmdLine))
-        {
-            return;
-        }
-
-        if (s_cmdLine == null || !IsDataValid(s_cmdLine))
-        {
-            return;
-        }
-
         s_gitHub = GetGitHubClientWithToken(s_cmdLine.Token);
 
         string dataFileToUse = s_cmdLine.IssuesFile;
@@ -52,7 +61,7 @@ class Program
         Colorizer.WriteLine("Found [Yellow!{0}] actions to take.", actionsToTake.Count);
         foreach (var action in actionsToTake)
         {
-            Colorizer.WriteLine(" > " + action.ToString());
+            Console.WriteLine(" > " + action.ToString());
         }
 
         Colorizer.WriteLine("Reading data from [Yellow!{0}]", dataFileToUse);
@@ -90,11 +99,25 @@ class Program
                 await s_gitHub.Issue.Update(issue.Org, issue.Repo, ghIssue.Number, updatedIssue);
                 await Task.Delay(1000);
 
-                // apply comments to the issue
-                foreach (ICommentAction action in actionsToTake.OfType<ICommentAction>())
+                if (actionsToTake.OfType<ICommentAction>().Any())
                 {
-                    await s_gitHub.Issue.Comment.Create(issue.Org, issue.Repo, int.Parse(issue.Id), action.GetComment());
+                    // ensure there is a repository specified for the issue.
+                    Repository ghRepository = await s_gitHub.Repository.Get(issue.Org, issue.Repo);
                     await Task.Delay(1000);
+
+                    // we need to set the repository on the issue
+                    ghIssue = new Issue(ghIssue.Url, ghIssue.HtmlUrl, ghIssue.CommentsUrl, ghIssue.EventsUrl, ghIssue.Number, ghIssue.State.Value,
+                        ghIssue.Title, ghIssue.Body, ghIssue.ClosedBy, ghIssue.User, ghIssue.Labels, ghIssue.Assignee, ghIssue.Assignees, ghIssue.Milestone,
+                        ghIssue.Comments, ghIssue.PullRequest, ghIssue.ClosedAt, ghIssue.CreatedAt, ghIssue.UpdatedAt, ghIssue.Id, ghIssue.NodeId, ghIssue.Locked,
+                        ghRepository, ghIssue.Reactions);
+
+                    // apply comments to the issue
+                    foreach (ICommentAction action in actionsToTake.OfType<ICommentAction>())
+                    {
+                        string commentData = action.GetComment(ghIssue);
+                        await s_gitHub.Issue.Comment.Create(issue.Org, issue.Repo, int.Parse(issue.Id), commentData);
+                        await Task.Delay(1000);
+                    }
                 }
 
                 Colorizer.WriteLine("[Green!done].");
