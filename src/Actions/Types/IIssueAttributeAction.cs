@@ -1,6 +1,6 @@
 ﻿using Octokit;
 
-public interface IAction
+public interface IIssueAttributeAction
 {
     void ApplyTo(IssueUpdate issue);
 }

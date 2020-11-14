@@ -1,8 +1,10 @@
-﻿using Octokit;
+﻿using ghUpdate.Helpers;
+using Octokit;
 using OutputColorizer;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,25 +17,34 @@ class Program
         using (ColorizerFileLog s_writer = new ColorizerFileLog("fileLog.txt"))
         {
             Colorizer.SetupWriter(s_writer);
+
+            if (!CommandLine.Parser.TryParse(args, out s_cmdLine))
+            {
+                Colorizer.WriteLine("When using the Comment action, the following text replacements are available");
+
+                // also print the encoders that are supported by the Comment.
+                foreach (var item in CommentAction.s_tokenMap.Keys)
+                {
+                    Colorizer.WriteLine(" > " + item);
+                }
+
+                return;
+            }
+
+            if (s_cmdLine == null || !IsDataValid(s_cmdLine))
+            {
+                return;
+            }
+
             InternalMainAsync(args).GetAwaiter().GetResult();
         }
     }
 
     static async Task InternalMainAsync(string[] args)
     {
-        if (!CommandLine.Parser.TryParse(args, out s_cmdLine))
-        {
-            return;
-        }
-
-        if (s_cmdLine == null || !IsDataValid(s_cmdLine))
-        {
-            return;
-        }
-
         s_gitHub = GetGitHubClientWithToken(s_cmdLine.Token);
 
-        string dataFileToUse = s_cmdLine.DataFile;
+        string dataFileToUse = s_cmdLine.IssuesFile;
         // Does it have a 'progress.dat' file?
 
         if (File.Exists("progress.dat"))
@@ -46,13 +57,9 @@ class Program
             }
         }
 
-        Colorizer.WriteLine("Reading actions to take on issues from [Yellow!{0}]", s_cmdLine.ActionsFile);
-        List<IssueAction> actionsToTake = FileParserHelpers.ParseContent(s_cmdLine.ActionsFile, IssueAction.Parse);
-        Colorizer.WriteLine("Found [Yellow!{0}] actions to take.", actionsToTake.Count);
+        List<IssueAction> actionsToTake = ReadActionsFromFile();
 
-        Colorizer.WriteLine("Reading data from [Yellow!{0}]", dataFileToUse);
-        List<ParsedIssue> issues = FileParserHelpers.ParseContent(dataFileToUse, ParsedIssue.Parse);
-        Colorizer.WriteLine("Found [Yellow!{0}] issues.", issues.Count);
+        List<ParsedIssue> issues = ReadIssuesFromFile(dataFileToUse);
 
         Colorizer.WriteLine("Ready to proceed with updating [Cyan!{0}] issues? (y/n)", issues.Count);
         string proceed = Console.ReadLine();
@@ -75,13 +82,34 @@ class Program
 
                 IssueUpdate updatedIssue = ghIssue.ToUpdate();
 
-                // apply the modifications to the issue.
-                foreach (IAction action in actionsToTake)
+                // apply the modifications to the issue
+                // this will filter to just the issues that change the attributes of an issue
+                foreach (IIssueAttributeAction action in actionsToTake.OfType<IIssueAttributeAction>())
                 {
                     action.ApplyTo(updatedIssue);
                 }
 
                 await s_gitHub.Issue.Update(issue.Org, issue.Repo, ghIssue.Number, updatedIssue);
+                await Task.Delay(1000);
+
+                // if we have any comments we want to add, add them here
+                if (actionsToTake.OfType<ICommentAction>().Any())
+                {
+                    // ensure there is a repository specified for the issue.
+                    Repository ghRepository = await s_gitHub.Repository.Get(issue.Org, issue.Repo);
+                    await Task.Delay(1000);
+
+                    // we need to set the repository on the issue
+                    ghIssue = ghIssue.WithRepository(ghRepository);
+
+                    // apply comments to the issue
+                    foreach (ICommentAction action in actionsToTake.OfType<ICommentAction>())
+                    {
+                        string commentData = action.GetComment(ghIssue);
+                        await s_gitHub.Issue.Comment.Create(issue.Org, issue.Repo, int.Parse(issue.Id), commentData);
+                        await Task.Delay(1000);
+                    }
+                }
 
                 Colorizer.WriteLine("[Green!done].");
             }
@@ -113,6 +141,27 @@ class Program
         File.Delete("progress.dat");
     }
 
+    private static List<ParsedIssue> ReadIssuesFromFile(string dataFileToUse)
+    {
+        Colorizer.WriteLine("Reading data from [Yellow!{0}]", dataFileToUse);
+        List<ParsedIssue> issues = FileParserHelpers.ParseContent(dataFileToUse, ParsedIssue.Parse);
+        Colorizer.WriteLine("Found [Yellow!{0}] issues.", issues.Count);
+        return issues;
+    }
+
+    private static List<IssueAction> ReadActionsFromFile()
+    {
+        Colorizer.WriteLine("Reading actions to take on issues from [Yellow!{0}]", s_cmdLine.ActionsFile);
+        List<IssueAction> actionsToTake = FileParserHelpers.ParseContent(s_cmdLine.ActionsFile, IssueAction.Parse);
+        Colorizer.WriteLine("Found [Yellow!{0}] actions to take.", actionsToTake.Count);
+        foreach (var action in actionsToTake)
+        {
+            Console.WriteLine(" > " + action.ToString());
+        }
+
+        return actionsToTake;
+    }
+
     private static bool IsDataValid(CommandLineArgs s_cmdLine)
     {
         // if we have specified a token, use that.
@@ -122,7 +171,7 @@ class Program
             return false;
         }
 
-        if (!File.Exists(s_cmdLine.DataFile))
+        if (!File.Exists(s_cmdLine.IssuesFile))
         {
             Colorizer.WriteLine("[Red!Error] Please specify an existing data file!");
             return false;

@@ -1,16 +1,11 @@
 ﻿using Octokit;
+using System;
 
-public class LabelAction : IssueAction
+public class LabelAction : IssueAction, IIssueAttributeAction
 {
-    public string Label
-    {
-        get
-        {
-            return AdditionalData[0];
-        }
-    }
+    public string Label => AdditionalData[0];
 
-    public override void ApplyTo(IssueUpdate issue)
+    public void ApplyTo(IssueUpdate issue)
     {
         switch (Operation)
         {
@@ -21,7 +16,7 @@ public class LabelAction : IssueAction
                 issue.RemoveLabel(Label);
                 break;
             default:
-                break;
+                throw new NotSupportedException($"{nameof(LabelAction)} does not support operation {Operation}");
         }
     }
 }
