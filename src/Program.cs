@@ -1,4 +1,5 @@
-﻿using Octokit;
+﻿using ghUpdate.Helpers;
+using Octokit;
 using OutputColorizer;
 using System;
 using System.Collections.Generic;
@@ -56,17 +57,9 @@ class Program
             }
         }
 
-        Colorizer.WriteLine("Reading actions to take on issues from [Yellow!{0}]", s_cmdLine.ActionsFile);
-        List<IssueAction> actionsToTake = FileParserHelpers.ParseContent(s_cmdLine.ActionsFile, IssueAction.Parse);
-        Colorizer.WriteLine("Found [Yellow!{0}] actions to take.", actionsToTake.Count);
-        foreach (var action in actionsToTake)
-        {
-            Console.WriteLine(" > " + action.ToString());
-        }
+        List<IssueAction> actionsToTake = ReadActionsFromFile();
 
-        Colorizer.WriteLine("Reading data from [Yellow!{0}]", dataFileToUse);
-        List<ParsedIssue> issues = FileParserHelpers.ParseContent(dataFileToUse, ParsedIssue.Parse);
-        Colorizer.WriteLine("Found [Yellow!{0}] issues.", issues.Count);
+        List<ParsedIssue> issues = ReadIssuesFromFile(dataFileToUse);
 
         Colorizer.WriteLine("Ready to proceed with updating [Cyan!{0}] issues? (y/n)", issues.Count);
         string proceed = Console.ReadLine();
@@ -99,6 +92,7 @@ class Program
                 await s_gitHub.Issue.Update(issue.Org, issue.Repo, ghIssue.Number, updatedIssue);
                 await Task.Delay(1000);
 
+                // if we have any comments we want to add, add them here
                 if (actionsToTake.OfType<ICommentAction>().Any())
                 {
                     // ensure there is a repository specified for the issue.
@@ -106,10 +100,7 @@ class Program
                     await Task.Delay(1000);
 
                     // we need to set the repository on the issue
-                    ghIssue = new Issue(ghIssue.Url, ghIssue.HtmlUrl, ghIssue.CommentsUrl, ghIssue.EventsUrl, ghIssue.Number, ghIssue.State.Value,
-                        ghIssue.Title, ghIssue.Body, ghIssue.ClosedBy, ghIssue.User, ghIssue.Labels, ghIssue.Assignee, ghIssue.Assignees, ghIssue.Milestone,
-                        ghIssue.Comments, ghIssue.PullRequest, ghIssue.ClosedAt, ghIssue.CreatedAt, ghIssue.UpdatedAt, ghIssue.Id, ghIssue.NodeId, ghIssue.Locked,
-                        ghRepository, ghIssue.Reactions);
+                    ghIssue = ghIssue.WithRepository(ghRepository);
 
                     // apply comments to the issue
                     foreach (ICommentAction action in actionsToTake.OfType<ICommentAction>())
@@ -148,6 +139,27 @@ class Program
         //remove the progress.dat file.
         Colorizer.WriteLine("Removing the progress.dat file");
         File.Delete("progress.dat");
+    }
+
+    private static List<ParsedIssue> ReadIssuesFromFile(string dataFileToUse)
+    {
+        Colorizer.WriteLine("Reading data from [Yellow!{0}]", dataFileToUse);
+        List<ParsedIssue> issues = FileParserHelpers.ParseContent(dataFileToUse, ParsedIssue.Parse);
+        Colorizer.WriteLine("Found [Yellow!{0}] issues.", issues.Count);
+        return issues;
+    }
+
+    private static List<IssueAction> ReadActionsFromFile()
+    {
+        Colorizer.WriteLine("Reading actions to take on issues from [Yellow!{0}]", s_cmdLine.ActionsFile);
+        List<IssueAction> actionsToTake = FileParserHelpers.ParseContent(s_cmdLine.ActionsFile, IssueAction.Parse);
+        Colorizer.WriteLine("Found [Yellow!{0}] actions to take.", actionsToTake.Count);
+        foreach (var action in actionsToTake)
+        {
+            Console.WriteLine(" > " + action.ToString());
+        }
+
+        return actionsToTake;
     }
 
     private static bool IsDataValid(CommandLineArgs s_cmdLine)
