@@ -80,18 +80,6 @@ class Program
                 var ghIssue = await s_gitHub.Issue.Get(issue.Org, issue.Repo, int.Parse(issue.Id));
                 await Task.Delay(1000);
 
-                IssueUpdate updatedIssue = ghIssue.ToUpdate();
-
-                // apply the modifications to the issue
-                // this will filter to just the issues that change the attributes of an issue
-                foreach (IIssueAttributeAction action in actionsToTake.OfType<IIssueAttributeAction>())
-                {
-                    action.ApplyTo(updatedIssue);
-                }
-
-                await s_gitHub.Issue.Update(issue.Org, issue.Repo, ghIssue.Number, updatedIssue);
-                await Task.Delay(1000);
-
                 // if we have any comments we want to add, add them here
                 if (actionsToTake.OfType<ICommentAction>().Any())
                 {
@@ -110,6 +98,18 @@ class Program
                         await Task.Delay(1000);
                     }
                 }
+
+                // apply the modifications to the issue
+                IssueUpdate updatedIssue = ghIssue.ToUpdate();
+
+                // this will filter to just the issues that change the attributes of an issue
+                foreach (IIssueAttributeAction action in actionsToTake.OfType<IIssueAttributeAction>())
+                {
+                    action.ApplyTo(updatedIssue);
+                }
+
+                await s_gitHub.Issue.Update(issue.Org, issue.Repo, ghIssue.Number, updatedIssue);
+                await Task.Delay(1000);
 
                 Colorizer.WriteLine("[Green!done].");
             }
