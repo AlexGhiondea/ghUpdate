@@ -1,6 +1,8 @@
-﻿using Octokit;
+﻿using ghUpdate.Models;
+using Octokit;
 using System;
 
+[AppliesTo(AttributeTypeEnum.assignee)]
 public class AssigneeAction : IssueAction, IIssueAttributeAction
 {
     public string Assignee => AdditionalData[0];

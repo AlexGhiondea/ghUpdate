@@ -1,8 +1,10 @@
-﻿using Octokit;
+﻿using ghUpdate.Models;
+using Octokit;
 using System;
 using System.Collections.Generic;
 using System.Net;
 
+[AppliesTo(AttributeTypeEnum.comment)]
 public class CommentAction : IssueAction, ICommentAction
 {
     public string Comment => AdditionalData[0].Trim();

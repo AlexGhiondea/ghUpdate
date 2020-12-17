@@ -1,6 +1,8 @@
-﻿using Octokit;
+﻿using ghUpdate.Models;
+using Octokit;
 using System;
 
+[AppliesTo(AttributeTypeEnum.title)]
 public class TitleAction : IssueAction, IIssueAttributeAction
 {
     public string Title => AdditionalData[0];

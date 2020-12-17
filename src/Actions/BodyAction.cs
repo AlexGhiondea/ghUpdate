@@ -1,6 +1,8 @@
-﻿using Octokit;
+﻿using ghUpdate.Models;
+using Octokit;
 using System;
 
+[AppliesTo(AttributeTypeEnum.body)]
 public class BodyAction : IssueAction, IIssueAttributeAction
 {
     public string Body => AdditionalData[0];

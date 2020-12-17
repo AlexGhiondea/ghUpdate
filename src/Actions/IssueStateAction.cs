@@ -1,6 +1,8 @@
-﻿using Octokit;
+﻿using ghUpdate.Models;
+using Octokit;
 using System;
 
+[AppliesTo(AttributeTypeEnum.state)]
 public class IssueStateAction : IssueAction, IIssueAttributeAction
 {
     public ItemState State => Enum.Parse<ItemState>(AdditionalData[0].Trim(), true);

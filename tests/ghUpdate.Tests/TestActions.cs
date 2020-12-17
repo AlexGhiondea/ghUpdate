@@ -1,8 +1,5 @@
 using NUnit.Framework;
-using NUnit.Framework.Constraints;
 using Octokit;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace ghUpdate.Tests
