@@ -33,6 +33,7 @@ public class CommentAction : IssueAction, ICommentAction
             throw new InvalidOperationException($"{nameof(CommentAction)} only supports 'add' operation");
         }
 
+        // using a string here because we want to do ignorecase replacements
         string commentBuilder = Comment;
         foreach (string key in s_tokenMap.Keys)
         {
