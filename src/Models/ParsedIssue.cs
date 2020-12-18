@@ -1,6 +1,6 @@
 using System;
 
-public class ParsedIssue 
+public class ParsedIssue
 {
     public string Org { get; set; }
     public string Repo { get; set; }
@@ -15,8 +15,15 @@ public class ParsedIssue
     public static ParsedIssue Parse(string url)
     {
         //https://github.com/Azure/azure-sdk-for-ruby/issues/957
-
-        Uri uri = new Uri(url);
+        Uri uri;
+        try
+        {
+            uri = new Uri(url);
+        }
+        catch (Exception e)
+        {
+            throw new ArgumentException($"Expected a valid url in {url}", e);
+        }
 
         //get the segments and validate that the last segment is a number.
 
@@ -26,11 +33,13 @@ public class ParsedIssue
             throw new ArgumentException($"Expected url to contain 'org'/'repo'/issues/'id' in {uri}");
         }
 
-        ParsedIssue i = new ParsedIssue();
-        i.Org = StripTrailingSlash(uri.Segments[segmentCount - 4]);
-        i.Repo = StripTrailingSlash(uri.Segments[segmentCount - 3]);
-        i.Type = StripTrailingSlash(uri.Segments[segmentCount - 2]);
-        i.Id = StripTrailingSlash(uri.Segments[segmentCount - 1]);
+        ParsedIssue i = new ParsedIssue
+        {
+            Org = StripTrailingSlash(uri.Segments[segmentCount - 4]),
+            Repo = StripTrailingSlash(uri.Segments[segmentCount - 3]),
+            Type = StripTrailingSlash(uri.Segments[segmentCount - 2]),
+            Id = StripTrailingSlash(uri.Segments[segmentCount - 1])
+        };
 
         return i;
     }
