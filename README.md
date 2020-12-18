@@ -57,10 +57,12 @@ The set of actions you can take are:
 
 The second part of the data represents the attribute of the issue that you are updating.
 The set of attributes you can modify are:
- - label
- - asignee
- - state
- - comment
+ - label (add, remove)
+ - asignee (add, remove)
+ - state (set)
+ - comment (add)
+ - title (set)
+ - body (set)
 
 The third part of the line contains any additional data that you need for a specific attribute. When adding/removing labels, the additional information contains the name of the label.
 
