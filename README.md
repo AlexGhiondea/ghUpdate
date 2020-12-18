@@ -1,8 +1,6 @@
 # ghUpdate
 Tool to bulk update GitHub issues
 
-[![codecov](https://codecov.io/gh/AlexGhiondea/ghupdate/branch/main/graph/badge.svg?token=IPTY4MNZ4T)](https://codecov.io/gh/AlexGhiondea/ghupdate)
-
 Usage:
 ```
 Usage:
