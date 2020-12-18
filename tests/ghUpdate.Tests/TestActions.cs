@@ -9,7 +9,7 @@ namespace ghUpdate.Tests
 {
     public class TestActions
     {
-        [Category("Actions")]
+        [Category("Valid operations on Action")]
         [TestCase(OperationTypeEnum.add, AttributeTypeEnum.assignee, "testUser", new string[] { "assignedUser", "testUser" })]
         [TestCase(OperationTypeEnum.add, AttributeTypeEnum.label, "testLabel", new string[] { "defaultLabel", "testLabel" })]
 
@@ -55,6 +55,24 @@ namespace ghUpdate.Tests
             Assert.Throws<NotSupportedException>(() => (action as IIssueAttributeAction).ApplyTo(updatedIssue));
         }
 
+        [Category("Parsing Action")]
+        [TestCase("add,comment,Foo", OperationTypeEnum.add, AttributeTypeEnum.comment, new string[] { "Foo" })]
+        public void TestParsingAction(string configLine, OperationTypeEnum operation, AttributeTypeEnum attribute, params string[] additionalData)
+        {
+            IssueAction action = IssueAction.Parse(configLine);
+
+            Assert.AreEqual(action.Operation, operation);
+            Assert.AreEqual(action.Attribute, attribute);
+            Assert.AreEqual(action.AdditionalData.ToArray(), additionalData);
+        }
+
+        [Category("Parsing invalid Action")]
+        [TestCase("comment,Foo")]
+        public void TestInvalidParsingAction(string configLine)
+        {
+            Assert.Throws<ArgumentException>(() => IssueAction.Parse(configLine));
+        }
+
         private static object GetValueOfAttribute(IssueUpdate issue, AttributeTypeEnum attribute)
         {
             switch (attribute)
@@ -73,6 +91,5 @@ namespace ghUpdate.Tests
                     throw new NotSupportedException();
             }
         }
-
     }
 }
