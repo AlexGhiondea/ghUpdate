@@ -26,18 +26,9 @@ public abstract class IssueAction
 
         OperationTypeEnum operation = Enum.Parse<OperationTypeEnum>(entries[0]);
         AttributeTypeEnum attribute = Enum.Parse<AttributeTypeEnum>(entries[1]);
-        List<string> additionalData = entries[2..].ToList();
-
-        // this can throw, and that's ok!
-        Type typeToCreate = s_mapOfActions[attribute];
-
-        // create the object and assign the properties
-        var instantiatedType = (IssueAction)Activator.CreateInstance(typeToCreate);
-        instantiatedType.Operation = operation;
-        instantiatedType.Attribute = attribute;
-        instantiatedType.AdditionalData = additionalData;
-
-        return instantiatedType;
+        string[] additionalData = entries[2..];
+        
+        return Create(operation, attribute, additionalData);
     }
 
     public static IssueAction Create(OperationTypeEnum operation, AttributeTypeEnum attribute, params string[] additionalData)
