@@ -18,7 +18,7 @@ namespace ghUpdate.Tests
         {
             Issue issue = ObjectCreators.GetMockIssue("Title", "body", "htmlUrl", 1, ItemState.Open, "test", "testRepo");
 
-            string commentTransform = ObjectCreators.CreateAction<CommentAction>(OperationTypeEnum.add, AttributeTypeEnum.comment, "#issue.title#").GetComment(issue);
+            string commentTransform = ((CommentAction)IssueAction.Create(OperationTypeEnum.add, AttributeTypeEnum.comment, "#issue.title#")).GetComment(issue);
 
             Assert.AreEqual("Title", commentTransform);
         }

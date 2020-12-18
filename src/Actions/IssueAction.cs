@@ -40,6 +40,20 @@ public abstract class IssueAction
         return instantiatedType;
     }
 
+    public static IssueAction Create(OperationTypeEnum operation, AttributeTypeEnum attribute, params string[] additionalData)
+    {
+        // this can throw, and that's ok!
+        Type typeToCreate = s_mapOfActions[attribute];
+
+        // create the object and assign the properties
+        var instantiatedType = (IssueAction)Activator.CreateInstance(typeToCreate);
+        instantiatedType.Operation = operation;
+        instantiatedType.Attribute = attribute;
+        instantiatedType.AdditionalData = new List<string>(additionalData);
+
+        return instantiatedType;
+    }
+
     private static Dictionary<AttributeTypeEnum, Type> InitializeActionMap()
     {
         Dictionary<AttributeTypeEnum, Type> mapOfActions = new Dictionary<AttributeTypeEnum, Type>();
