@@ -1,8 +1,10 @@
-﻿using Octokit;
+﻿using ghUpdate.Models;
+using Octokit;
 using System;
 using System.Collections.Generic;
 using System.Net;
 
+[AppliesTo(AttributeTypeEnum.comment)]
 public class CommentAction : IssueAction, ICommentAction
 {
     public string Comment => AdditionalData[0].Trim();
@@ -33,6 +35,7 @@ public class CommentAction : IssueAction, ICommentAction
             throw new InvalidOperationException($"{nameof(CommentAction)} only supports 'add' operation");
         }
 
+        // using a string here because we want to do ignorecase replacements
         string commentBuilder = Comment;
         foreach (string key in s_tokenMap.Keys)
         {

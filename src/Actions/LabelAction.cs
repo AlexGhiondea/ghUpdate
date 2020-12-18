@@ -1,6 +1,8 @@
-﻿using Octokit;
+﻿using ghUpdate.Models;
+using Octokit;
 using System;
 
+[AppliesTo(AttributeTypeEnum.label)]
 public class LabelAction : IssueAction, IIssueAttributeAction
 {
     public string Label => AdditionalData[0];

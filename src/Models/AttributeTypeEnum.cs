@@ -3,5 +3,7 @@
     label,
     assignee,
     state,
-    comment
+    comment,
+    title,
+    body
 }
