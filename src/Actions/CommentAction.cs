@@ -25,7 +25,7 @@ public class CommentAction : IssueAction, ICommentAction
         // some properties can appear in the link so they need to be encoded
         { "#issue.title.encoded#", issue => WebUtility.UrlEncode(issue.Title) },
         { "#issue.body.encoded#", issue => WebUtility.UrlEncode(issue.Body) },
-        { "#env.newline.encoded#", issue => "%0A" },
+        { "#env.newline.encoded#", issue => WebUtility.UrlEncode(Environment.NewLine) },
 
         // some are not related to the issue at all
         { "#env.newline#", issue => Environment.NewLine },
