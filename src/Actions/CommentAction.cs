@@ -7,7 +7,9 @@ using System.Net;
 [AppliesTo(AttributeTypeEnum.comment)]
 public class CommentAction : IssueAction, ICommentAction
 {
-    public string Comment => AdditionalData[0].Trim();
+    // The Comment can contain commas which would manifest as multiple segments here.
+    // We should re-combine the text here.
+    public string Comment => string.Join(',', AdditionalData).Trim();
 
     internal static Dictionary<string, Func<Issue, string>> s_tokenMap = new Dictionary<string, Func<Issue, string>>()
     {
