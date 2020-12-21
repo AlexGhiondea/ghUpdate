@@ -27,7 +27,7 @@ public class CommentAction : IssueAction, ICommentAction
         { "#issue.body.encoded#", issue => WebUtility.UrlEncode(issue.Body) },
 
         // some are not related to the issue at all
-        { "#env.newline#", issue => Environment.NewLine },
+        { "#env.newline#", issue => "%0A" },
     };
 
     public string GetComment(Issue issue)
