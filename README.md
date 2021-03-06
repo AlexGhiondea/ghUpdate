@@ -70,15 +70,15 @@ The third part of the line contains any additional data that you need for a spec
 Comments are special because they allow transformations of the data based on the issue attributes. Special tokens are specified in the line that adds the comment and those tokens are replaced with the actual value from the issue when the issue is processed.
 
 These are the tokens that are currently supported:
- > #issue.number#
- > #issue.url#
- > #issue.title#
- > #issue.body#
- > #issue.repository.name#
- > #issue.repository.org#
- > #issue.title.encoded#
- > #issue.body.encoded#
- > #env.newline#
+  - #issue.number#
+  - #issue.url#
+  - #issue.title#
+  - #issue.body#
+  - #issue.repository.name#
+  - #issue.repository.org#
+  - #issue.title.encoded#
+  - #issue.body.encoded#
+  - #env.newline#
 
 Here is an example:
 ```
