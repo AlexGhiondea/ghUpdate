@@ -5,5 +5,6 @@
     state,
     comment,
     title,
-    body
+    body,
+    issue
 }
