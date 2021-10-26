@@ -113,12 +113,11 @@ class Program
                         // clone the comments
                         foreach(IssueComment comment in await s_gitHub.Issue.Comment.GetAllForIssue(issue.Org, issue.Repo, ghIssue.Number))
                         {
-                            string commentText = $"Created by: {comment.User.Login}{Environment.NewLine}{comment.Body}";
+                            string commentText = $"Created by @{comment.User.Login} at {comment.CreatedAt}{Environment.NewLine}{comment.Body}";
                             await s_gitHub.Issue.Comment.Create(newOrg,newRepo, createIssue.Number, commentText);
                             await Task.Delay(500);
                         }
                     }
-
                 }
                 else{
                     // ensure there is a repository specified for the issue.
