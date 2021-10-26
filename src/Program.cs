@@ -59,6 +59,8 @@ class Program
 
         List<IssueAction> actionsToTake = ReadActionsFromFile();
 
+        Validate(actionsToTake);
+
         List<ParsedIssue> issues = ReadIssuesFromFile(dataFileToUse);
 
         // Colorizer.WriteLine("Ready to proceed with updating [Cyan!{0}] issues? (y/n)", issues.Count);
@@ -76,79 +78,22 @@ class Program
                 // the current issue is the issue at position 0.
                 issue = issues[0];
 
-                Colorizer.Write("Updating [Yellow!{0}]...", issue);
+                Colorizer.WriteLine("Retrieving [Yellow!{0}]...", issue);
                 var ghIssue = await s_gitHub.Issue.Get(issue.Org, issue.Repo, int.Parse(issue.Id));
                 await Task.Delay(1000);
 
                 // there will be 2 modes of operation;
                 // 1. We update an existing issue
                 // 2. We clone an existing issue
-
-
                 if (actionsToTake.OfType<ICloneIssueAction>().Any())
                 {
-                    // We are cloning an issue. 
-                    // TODO: validate that we only have clone actions in this case!
-                    foreach (ICloneIssueAction action in actionsToTake.OfType<ICloneIssueAction>())
-                    {
-                        NewIssue ni = new NewIssue(ghIssue.Title);
-                        // apply the CLONE operation, if it exists.
-                        ni.Body = ghIssue.Body;
-
-                        foreach (User assignee in ghIssue.Assignees)
-                        {
-                            ni.Assignees.Add(assignee.Login);
-                        }
-                        foreach (Label label in ghIssue.Labels)
-                        {
-                            ni.Labels.Add(label.Name);
-                        }
-                        // do not clone the milestone as they rely on a milestone number which will be different across the repos
-
-                        string newRepo = action.GetNewRepo();
-                        string newOrg = action.GetNewOrg();
-                        Issue createIssue = await s_gitHub.Issue.Create(newOrg,newRepo, ni);
-                        await Task.Delay(500);
-
-                        // clone the comments
-                        foreach(IssueComment comment in await s_gitHub.Issue.Comment.GetAllForIssue(issue.Org, issue.Repo, ghIssue.Number))
-                        {
-                            string commentText = $"Created by @{comment.User.Login} at {comment.CreatedAt}{Environment.NewLine}{comment.Body}";
-                            await s_gitHub.Issue.Comment.Create(newOrg,newRepo, createIssue.Number, commentText);
-                            await Task.Delay(500);
-                        }
-                    }
+                    // we have already validated that we only have clone issues
+                    await CloneIssueAsync(actionsToTake, issue, ghIssue);
                 }
-                else{
-                    // ensure there is a repository specified for the issue.
-                    Repository ghRepository = await s_gitHub.Repository.Get(issue.Org, issue.Repo);
-                    await Task.Delay(1000);
-
-                    // we need to set the repository on the issue
-                    ghIssue = ghIssue.WithRepository(ghRepository);
-
-                    // apply comments to the issue
-                    foreach (ICommentAction action in actionsToTake.OfType<ICommentAction>())
-                    {
-                        string commentData = action.GetComment(ghIssue);
-                        await s_gitHub.Issue.Comment.Create(issue.Org, issue.Repo, int.Parse(issue.Id), commentData);
-                        await Task.Delay(1000);
-                    }
-                
-                    // apply the modifications to the issue
-                    IssueUpdate updatedIssue = ghIssue.ToUpdate();
-
-                    // this will filter to just the issues that change the attributes of an issue
-                    foreach (IIssueAttributeAction action in actionsToTake.OfType<IIssueAttributeAction>())
-                    {
-                        action.ApplyTo(updatedIssue);
-                    }
-
-                    await s_gitHub.Issue.Update(issue.Org, issue.Repo, ghIssue.Number, updatedIssue);
-                    await Task.Delay(1000);
+                else
+                {
+                    await UpdateIssueAsync(actionsToTake, issue, ghIssue);
                 }
-
-                Colorizer.WriteLine("[Green!done].");
             }
             catch
             {
@@ -176,6 +121,91 @@ class Program
         //remove the progress.dat file.
         Colorizer.WriteLine("Removing the progress.dat file");
         File.Delete("progress.dat");
+    }
+
+    private static async Task UpdateIssueAsync(List<IssueAction> actionsToTake, ParsedIssue issue, Issue ghIssue)
+    {
+        Colorizer.WriteLine("Applying updates ... ");
+        // ensure there is a repository specified for the issue.
+        Repository ghRepository = await s_gitHub.Repository.Get(issue.Org, issue.Repo);
+        await Task.Delay(1000);
+
+        // we need to set the repository on the issue
+        ghIssue = ghIssue.WithRepository(ghRepository);
+
+        // apply comments to the issue
+        foreach (ICommentAction action in actionsToTake.OfType<ICommentAction>())
+        {
+            string commentData = action.GetComment(ghIssue);
+            await s_gitHub.Issue.Comment.Create(issue.Org, issue.Repo, int.Parse(issue.Id), commentData);
+            await Task.Delay(1000);
+        }
+
+        // apply the modifications to the issue
+        IssueUpdate updatedIssue = ghIssue.ToUpdate();
+
+        // this will filter to just the issues that change the attributes of an issue
+        foreach (IIssueAttributeAction action in actionsToTake.OfType<IIssueAttributeAction>())
+        {
+            action.ApplyTo(updatedIssue);
+        }
+
+        await s_gitHub.Issue.Update(issue.Org, issue.Repo, ghIssue.Number, updatedIssue);
+        await Task.Delay(1000);
+        Colorizer.WriteLine("Applying updates [Green!done]!");
+    }
+
+    private static async Task CloneIssueAsync(List<IssueAction> actionsToTake, ParsedIssue issue, Issue ghIssue)
+    {
+        Colorizer.WriteLine("Cloning issue ... ");
+
+        // We are cloning an issue. 
+        // TODO: validate that we only have clone actions in this case!
+        foreach (ICloneIssueAction action in actionsToTake.OfType<ICloneIssueAction>())
+        {
+            NewIssue ni = new NewIssue(ghIssue.Title);
+            // apply the CLONE operation, if it exists.
+            ni.Body = ghIssue.Body;
+            foreach (User assignee in ghIssue.Assignees)
+            {
+                ni.Assignees.Add(assignee.Login);
+            }
+            foreach (Label label in ghIssue.Labels)
+            {
+                ni.Labels.Add(label.Name);
+            }
+            // do not clone the milestone as they rely on a milestone number which will be different across the repos
+
+            string newRepo = action.GetNewRepo();
+            string newOrg = action.GetNewOrg();
+            Issue createdIssue = await s_gitHub.Issue.Create(newOrg, newRepo, ni);
+            await Task.Delay(500);
+
+            Colorizer.WriteLine ("Created clone of issue: [Yellow!{0}]", createdIssue.Url);
+            Colorizer.WriteLine("Duplicating comments...");
+
+            // clone the comments
+            foreach (IssueComment comment in await s_gitHub.Issue.Comment.GetAllForIssue(issue.Org, issue.Repo, ghIssue.Number))
+            {
+                string commentText = $"Created by @{comment.User.Login} at {comment.CreatedAt}{Environment.NewLine}{comment.Body}";
+                await s_gitHub.Issue.Comment.Create(newOrg, newRepo, createdIssue.Number, commentText);
+                await Task.Delay(500);
+            }
+            Colorizer.WriteLine("Duplicating comments... [Green!done].");
+            Colorizer.WriteLine("Cloning issue [Green!complete]!");
+        }
+    }
+
+    private static void Validate(List<IssueAction> actionsToTake)
+    {
+        // We cannot have a mix of clone operations.
+        if (actionsToTake.OfType<ICloneIssueAction>().Any())
+        {   
+            // if we have any clone operations, all of them have to be clone operations
+            if (actionsToTake.OfType<ICloneIssueAction>().Count()!=actionsToTake.Count()){
+                throw new InvalidOperationException("Cannot mix and match clone actions with any other actions");
+            }
+        }
     }
 
     private static List<ParsedIssue> ReadIssuesFromFile(string dataFileToUse)
