@@ -169,7 +169,7 @@ class Program
             Issue createdIssue = await s_gitHub.Issue.Create(newOrg, newRepo, ni);
             await Task.Delay(500);
 
-            Colorizer.WriteLine("Create clone [Yellow!{0}].", createdIssue.Url);
+            Colorizer.WriteLine("Created clone [Yellow!{0}].", createdIssue.Url);
             Colorizer.WriteLine("Duplicating [Yellow!{0}] comments:", ghIssue.Comments);
 
             // clone the comments
