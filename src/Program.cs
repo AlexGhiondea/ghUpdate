@@ -98,7 +98,7 @@ class Program
             catch
             {
                 // if we end up hitting the rate limit, do something here.
-                Colorizer.WriteLine("[Red!failed].");
+                Colorizer.WriteLine("[Red!Error].");
 
                 if (issue != null)
                 {
@@ -125,7 +125,7 @@ class Program
 
     private static async Task UpdateIssueAsync(List<IssueAction> actionsToTake, ParsedIssue issue, Issue ghIssue)
     {
-        Colorizer.WriteLine("Applying updates ... ");
+        Colorizer.WriteLine("Started applying updates for [Yellow!{0}]", issue.ToString());
         // ensure there is a repository specified for the issue.
         Repository ghRepository = await s_gitHub.Repository.Get(issue.Org, issue.Repo);
         await Task.Delay(1000);
@@ -152,12 +152,12 @@ class Program
 
         await s_gitHub.Issue.Update(issue.Org, issue.Repo, ghIssue.Number, updatedIssue);
         await Task.Delay(1000);
-        Colorizer.WriteLine("Applying updates [Green!done]!");
+        Colorizer.WriteLine("Applying updates - [Green!complete]!");
     }
 
     private static async Task CloneIssueAsync(List<IssueAction> actionsToTake, ParsedIssue issue, Issue ghIssue)
     {
-        Colorizer.WriteLine("Cloning issue ... ");
+        Colorizer.WriteLine("Started cloning issue [Yellow!{0}]:", issue.ToString());
 
         // We are cloning an issue. 
         foreach (ICloneIssueAction action in actionsToTake.OfType<ICloneIssueAction>())
@@ -169,18 +169,20 @@ class Program
             Issue createdIssue = await s_gitHub.Issue.Create(newOrg, newRepo, ni);
             await Task.Delay(500);
 
-            Colorizer.WriteLine ("Created clone of issue: [Yellow!{0}]", createdIssue.Url);
-            Colorizer.WriteLine("Duplicating comments...");
+            Colorizer.WriteLine ("Create clone [Yellow!{0}].", createdIssue.Url);
+            Colorizer.WriteLine("Duplicating [Yellow!{0}] comments:", ghIssue.Comments);
 
             // clone the comments
+            int commentsCloned = 0;
             foreach (IssueComment comment in await s_gitHub.Issue.Comment.GetAllForIssue(issue.Org, issue.Repo, ghIssue.Number))
             {
                 string commentText = $"Created by @{comment.User.Login} at {comment.CreatedAt}{Environment.NewLine}{Environment.NewLine}{comment.Body}";
                 await s_gitHub.Issue.Comment.Create(newOrg, newRepo, createdIssue.Number, commentText);
                 await Task.Delay(500);
+                commentsCloned++;
+                Colorizer.WriteLine("Duplicated [Cyan!{0}]/[Yellow!{1}] comments.", commentsCloned, ghIssue.Comments);
             }
-            Colorizer.WriteLine("Duplicating comments... [Green!done].");
-            Colorizer.WriteLine("Cloning issue [Green!complete]!");
+            Colorizer.WriteLine("Cloning issue - [Green!complete]!");
         }
     }
 
@@ -211,7 +213,7 @@ class Program
         Colorizer.WriteLine("Found [Yellow!{0}] actions to take.", actionsToTake.Count);
         foreach (var action in actionsToTake)
         {
-            Console.WriteLine(" > " + action.ToString());
+            Colorizer.WriteLine(" > [Cyan!{0}]", action.ToString());
         }
 
         return actionsToTake;
