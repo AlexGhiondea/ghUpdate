@@ -160,24 +160,12 @@ class Program
         Colorizer.WriteLine("Cloning issue ... ");
 
         // We are cloning an issue. 
-        // TODO: validate that we only have clone actions in this case!
         foreach (ICloneIssueAction action in actionsToTake.OfType<ICloneIssueAction>())
         {
-            NewIssue ni = new NewIssue(ghIssue.Title);
-            // apply the CLONE operation, if it exists.
-            ni.Body = ghIssue.Body;
-            foreach (User assignee in ghIssue.Assignees)
-            {
-                ni.Assignees.Add(assignee.Login);
-            }
-            foreach (Label label in ghIssue.Labels)
-            {
-                ni.Labels.Add(label.Name);
-            }
-            // do not clone the milestone as they rely on a milestone number which will be different across the repos
-
+            NewIssue ni =  action.CloneIssue(ghIssue);
+            string newOrg =  action.GetNewOrg();
             string newRepo = action.GetNewRepo();
-            string newOrg = action.GetNewOrg();
+
             Issue createdIssue = await s_gitHub.Issue.Create(newOrg, newRepo, ni);
             await Task.Delay(500);
 
@@ -267,7 +255,7 @@ class Program
 
     public static GitHubClient GetGitHubClientWithToken(string token)
     {
-        GitHubClient ghClient = new GitHubClient(new ProductHeaderValue("GitHubSync"));
+        GitHubClient ghClient = new GitHubClient(new ProductHeaderValue("ghUpdate"));
         ghClient.Credentials = new Credentials(token);
         return ghClient;
     }
