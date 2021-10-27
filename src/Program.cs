@@ -162,14 +162,14 @@ class Program
         // We are cloning an issue. 
         foreach (ICloneIssueAction action in actionsToTake.OfType<ICloneIssueAction>())
         {
-            NewIssue ni =  action.CloneIssue(ghIssue);
-            string newOrg =  action.GetNewOrg();
+            NewIssue ni = action.CloneIssue(ghIssue);
+            string newOrg = action.GetNewOrg();
             string newRepo = action.GetNewRepo();
 
             Issue createdIssue = await s_gitHub.Issue.Create(newOrg, newRepo, ni);
             await Task.Delay(500);
 
-            Colorizer.WriteLine ("Create clone [Yellow!{0}].", createdIssue.Url);
+            Colorizer.WriteLine("Create clone [Yellow!{0}].", createdIssue.Url);
             Colorizer.WriteLine("Duplicating [Yellow!{0}] comments:", ghIssue.Comments);
 
             // clone the comments
@@ -190,9 +190,10 @@ class Program
     {
         // We cannot have a mix of clone operations.
         if (actionsToTake.OfType<ICloneIssueAction>().Any())
-        {   
+        {
             // if we have any clone operations, all of them have to be clone operations
-            if (actionsToTake.OfType<ICloneIssueAction>().Count()!=actionsToTake.Count()){
+            if (actionsToTake.OfType<ICloneIssueAction>().Count() != actionsToTake.Count())
+            {
                 throw new InvalidOperationException("Cannot mix and match clone actions with any other actions");
             }
         }
