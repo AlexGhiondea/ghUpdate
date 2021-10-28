@@ -2,5 +2,6 @@
 {
     add,
     remove,
-    set
+    set,
+    clone
 }

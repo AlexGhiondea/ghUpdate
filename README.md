@@ -49,11 +49,17 @@ set, state, open
 add, comment, We are closing this issue
 ```
 
+Here is an example for cloning issues:
+```
+clone,issue,<orgToCloneTo>,<repoToCloneTo>
+```
+
 Each line starts with an action to take. Not all actions are supported for every attribute.
 The set of actions you can take are:
  - add
  - remove
  - set
+ - clone
 
 The second part of the data represents the attribute of the issue that you are updating.
 The set of attributes you can modify are:
@@ -63,6 +69,7 @@ The set of attributes you can modify are:
  - comment (add)
  - title (set)
  - body (set)
+ - issue (clone)
 
 The third part of the line contains any additional data that you need for a specific attribute. When adding/removing labels, the additional information contains the name of the label.
 

@@ -350,3 +350,4 @@ MigrationBackup/
 .ionide/
 launchSettings.json
 /src/Properties/launchSettings.json
+.vscode/launch.json
